@@ -1,47 +1,54 @@
-import solc from "solc";
-import fs from "fs";
+import { default as h } from "hardhat";
+const hre: any = h;
 
 
-
-
-class Compiler {
-  fileName: string;
-  contractName: string;
-  output: Object;
-
-  constructor(fileName: string, contractName: string) {
-    this.fileName = fileName;
-    this.contractName = contractName;
-    this.output = this.getCompilerOutput();
-  }
-
-  getCompilerOutput() {
-    const content = this.getContractContent(this.fileName);
-    const input = `{"language":"Solidity","sources":{"${this.fileName}":{"content":${JSON.stringify(content)}}},"settings":{"outputSelection":{"*":{"*":["*"]}}}}`;
-    const output = JSON.parse(solc.compile(input, { import: this.importCallback })).contracts[this.fileName][this.contractName];
-  
-    return output;
-  }
-
-
-  getContractContent(fileName: string): string {
-    const content = fs.readFileSync(`contracts/${this.fileName}`).toString();
-    return content;
-  }
-
-
-  importCallback(fileName: string): object {
-    const contents = this.getContractContent(fileName);
-    const output = (contents.length > 1) ? { contents } : { error: 'File not found'};
-    return output;
-  }
+/*
+    Target can be either the contracts name in case of the HardhatDependent implementation, or the directory of the file containing the contract.
+*/
+interface ICompiler {
+    compileFromTarget(targetName: string) : Promise<string>
 }
 
 
-export { Compiler };
-  
-  
-  
 
-  
-  
+
+
+
+/*
+    Wrapper class for full compiler implementations.
+*/
+class Compiler implements ICompiler {
+    compileFromTarget(targetName: string): Promise<string> {
+        return new Promise((resolve, reject) => null);
+    }
+}
+
+
+
+
+
+
+
+class HardhatDependentCompiler extends Compiler {
+
+    /*
+        Since we do not care about anything other than the bytecode, since
+        the bytecode is the only component we send to the Oracle contract, 
+        we discard the ContractFactory object and only keep the bytecode. 
+    */
+    async compileFromTarget(targetName: string): Promise<string> {
+        const bytecodePromise = hre.ethers.getContractFactory(targetName)
+        .then((contractFactory: any) => contractFactory.bytecode)
+        .catch((error: Error) => {
+            console.error(error)
+        })
+
+        return bytecodePromise;
+    }
+
+
+}
+
+
+
+export { Compiler, HardhatDependentCompiler };

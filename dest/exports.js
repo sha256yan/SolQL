@@ -1,5 +1,6 @@
 const { Query } = require("./Query");
-const { Compiler } = require("./Compiler")
+const { HardhatDependentCompiler } = require("./Compiler")
+const { OracleContract } = require("./Oracle")
 
 
-module.exports = { Query, Compiler };
+module.exports = { Query, HardhatDependentCompiler, OracleContract };

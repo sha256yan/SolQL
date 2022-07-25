@@ -8,22 +8,25 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Query = void 0;
-const ethers_1 = require("ethers");
-const Compiler_1 = require("./Compiler");
+const Oracle_1 = require("./Oracle");
+const hardhat_1 = __importDefault(require("hardhat"));
+const hre = hardhat_1.default;
 class Query {
-    constructor(fileName, contractName, oracleAddress, provider) {
-        const compiler = new Compiler_1.Compiler(fileName, contractName);
-        this.ethersContractFactory = ethers_1.ethers.ContractFactory.fromSolidity(compiler.output);
-        this.oracle = new ethers_1.ethers.Contract(oracleAddress, ["function run(bytes memory) external returns(bytes memory)"], provider);
-        return this;
+    constructor(compiler, targetName, chainID, provider) {
+        this.oracle = new Oracle_1.Oracle(chainID, provider);
+        this.compiler = compiler;
+        this.targetName = targetName;
     }
     run() {
         return __awaiter(this, void 0, void 0, function* () {
-            const bytecode = this.ethersContractFactory.bytecode;
-            const result = yield this.oracle.callStatic.run(bytecode);
-            return result;
+            const bytecode = yield this.compiler.compileFromTarget(this.targetName);
+            const rawQueryResult = yield this.oracle.runQuery(bytecode);
+            return rawQueryResult;
         });
     }
 }
